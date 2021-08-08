@@ -1,21 +1,14 @@
 from immlib import *
-import struct
 def main(args):
-    immunity = Debugger()
-    immunity.log('')
-    immunity.log('start script')
-    modules = ['vuln18.exe', 'func.dll', 'KERNEL32.DLL', 'msvcrt.dll', 'KERNELBASE.dll', 'ntdll.dll']
-    for module in modules:
-        mod = immunity.getModule(module)
-        if not mod:
-            immunity.log('no module ' + module)
-            continue
-        MZbase = mod.getBaseAddress()
-        PEoffset = struct.unpack('<L',immunity.readMemory(MZbase + 0x3c,4))[0]
-        PEbase = MZbase + PEoffset
-        flags = struct.unpack('<H',immunity.readMemory(PEbase + 0x5e,2))[0]
-        if((flags&0x0040) == 0):
-            immunity.log('module ' + module + ' no ASLR')
-        else:
-            immunity.log('module ' + module + ' ASLR')
-    return 'end' 
+ imm = Debugger()
+ search_code = " ".join(args)
+ search_bytes = imm.assemble( search_code )
+ search_results = imm.search( search_bytes ) 
+ for hit in search_results:
+  code_page = imm.getMemoryPageByAddress( hit ) 
+  access = code_page.getAccess( human = True ) 
+  
+  if "execute" in access.lower():
+ 	imm.log( "[*] Found: %s (0x%08x)" % ( search_code, hit ), address = hit ) 
+
+ return "[*] Finished searching for instructions, check the Log window."
